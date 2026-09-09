@@ -6,7 +6,7 @@ const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
 const PIN_RE = /^\d{4}$/;
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_MS = 15 * 60 * 1000;
-const DEFAULT_MAX_USERS = 10;
+const DEFAULT_MAX_USERS = 20;
 
 export function normalizeUsername(username: string): string {
   return username.trim().toLowerCase();
