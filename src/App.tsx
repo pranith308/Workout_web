@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LoginScreen } from './screens/LoginScreen';
 import { SignupScreen } from './screens/SignupScreen';
+import { ForgotPinScreen } from './screens/ForgotPinScreen';
 import { PlanListScreen } from './screens/PlanListScreen';
 import { DayViewScreen } from './screens/DayViewScreen';
 import { ExerciseListScreen } from './screens/ExerciseListScreen';
@@ -53,6 +54,14 @@ function AppRoutes() {
         element={
           <PublicRoute>
             <SignupScreen />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/forgot-pin"
+        element={
+          <PublicRoute>
+            <ForgotPinScreen />
           </PublicRoute>
         }
       />

@@ -2,18 +2,17 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { randomUUID } from 'crypto';
 import { adminAuth, adminDb } from './_lib/firebaseAdmin.js';
 import {
-  checkLoginLockout,
-  clearLoginFailures,
+  countUsers,
   createCustomToken,
   hashPin,
+  maxUsersAllowed,
   normalizeUsername,
-  recordLoginFailure,
+  requireInviteCode,
   validatePin,
   validateUsername,
-  verifyPin,
 } from './_lib/authHelpers.js';
 
-type Body = { username?: string; pin?: string };
+type Body = { username?: string; pin?: string; inviteCode?: string };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -21,15 +20,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { username = '', pin = '' } = req.body as Body;
+    const { username = '', pin = '', inviteCode = '' } = req.body as Body;
     const trimmedUsername = username.trim();
     const usernameKey = normalizeUsername(trimmedUsername);
+
+    const inviteError = requireInviteCode(inviteCode);
+    if (inviteError) return res.status(403).json({ error: inviteError });
 
     const userError = validateUsername(trimmedUsername);
     if (userError) return res.status(400).json({ error: userError });
 
     const pinError = validatePin(pin);
     if (pinError) return res.status(400).json({ error: pinError });
+
+    const userCount = await countUsers();
+    if (userCount >= maxUsersAllowed()) {
+      return res.status(403).json({ error: 'New accounts are not available right now.' });
+    }
 
     const usernameRef = adminDb().collection('usernames').doc(usernameKey);
     const existing = await usernameRef.get();

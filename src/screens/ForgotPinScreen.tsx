@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { signup } from '../services/authService';
+import { resetPin } from '../services/authService';
 import { Button, ErrorText, Field, Screen, Subtitle, Title } from '../components/ui';
 
-export function SignupScreen() {
+export function ForgotPinScreen() {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
-  const [pin, setPin] = useState('');
-  const [confirmPin, setConfirmPin] = useState('');
   const [inviteCode, setInviteCode] = useState('');
+  const [newPin, setNewPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -16,17 +16,17 @@ export function SignupScreen() {
     e.preventDefault();
     setError(null);
 
-    if (pin !== confirmPin) {
+    if (newPin !== confirmPin) {
       setError('PINs do not match.');
       return;
     }
 
     setLoading(true);
     try {
-      await signup(username, pin, inviteCode);
+      await resetPin(username, newPin, inviteCode);
       navigate('/plans', { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Signup failed');
+      setError(err instanceof Error ? err.message : 'PIN reset failed');
     } finally {
       setLoading(false);
     }
@@ -34,36 +34,39 @@ export function SignupScreen() {
 
   return (
     <Screen>
-      <Title>Create account</Title>
-      <Subtitle>Invite code required. Then pick a username and 4-digit PIN.</Subtitle>
+      <Title>Forgot PIN</Title>
+      <Subtitle>
+        Enter your username, the shared invite code, and a new 4-digit PIN. You&apos;ll be signed in
+        after reset.
+      </Subtitle>
 
       <form onSubmit={handleSubmit}>
-        <Field
-          label="Invite code"
-          value={inviteCode}
-          onChange={(e) => setInviteCode(e.target.value)}
-          placeholder="Shared invite code"
-          autoComplete="off"
-        />
         <Field
           label="Username"
           autoComplete="username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          placeholder="3–20 letters, numbers, underscore"
+          placeholder="Your username"
         />
         <Field
-          label="PIN"
+          label="Invite code"
+          value={inviteCode}
+          onChange={(e) => setInviteCode(e.target.value)}
+          placeholder="Same code used to create accounts"
+          autoComplete="off"
+        />
+        <Field
+          label="New PIN"
           type="password"
           inputMode="numeric"
           autoComplete="new-password"
           maxLength={4}
-          value={pin}
-          onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+          value={newPin}
+          onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
           placeholder="4 digits"
         />
         <Field
-          label="Confirm PIN"
+          label="Confirm new PIN"
           type="password"
           inputMode="numeric"
           autoComplete="new-password"
@@ -76,15 +79,19 @@ export function SignupScreen() {
         <Button
           type="submit"
           disabled={
-            loading || !inviteCode.trim() || !username || pin.length !== 4 || confirmPin.length !== 4
+            loading ||
+            !username ||
+            !inviteCode.trim() ||
+            newPin.length !== 4 ||
+            confirmPin.length !== 4
           }
         >
-          {loading ? 'Creating…' : 'Create account'}
+          {loading ? 'Resetting…' : 'Reset PIN & sign in'}
         </Button>
       </form>
 
       <div className="auth-links">
-        <Link to="/login">Already have an account?</Link>
+        <Link to="/login">Back to sign in</Link>
       </div>
     </Screen>
   );

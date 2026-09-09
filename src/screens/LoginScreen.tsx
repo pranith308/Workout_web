@@ -56,6 +56,7 @@ export function LoginScreen() {
 
       <div className="auth-links">
         <Link to="/signup">Create account</Link>
+        <Link to="/forgot-pin">Forgot PIN?</Link>
       </div>
     </Screen>
   );

@@ -57,7 +57,25 @@ npx vercel login          # once
 npm run dev:full          # http://localhost:3000
 ```
 
-## Deploy to Vercel (production)
+## Access control
+
+- **Invite code** (`INVITE_CODE` env): required for **Create account** and **Forgot PIN**
+- **Max users** (`MAX_USERS`, default 10): blocks new signups after the cap
+- Share the invite code only with people you trust; change it anytime in Vercel env vars
+
+## Custom URL (Vercel subdomain)
+
+Underscores are **not** allowed in hostnames. Use a hyphen:
+
+1. Vercel project → **Settings → Domains**
+2. Add `workout-v2.vercel.app` (or rename the project so the default URL matches)
+3. Or connect your own domain (e.g. `workout.yourdomain.com`)
+
+Current production URL: `https://workout-web-orcin.vercel.app`
+
+## Forgot PIN
+
+Login → **Forgot PIN?** → username + invite code + new PIN → signed in.
 
 1. Create a GitHub repo for this folder and push `main`
 2. [Vercel](https://vercel.com) → Import that repo (project already linked locally as `workout-web` if you ran `vercel dev`)
