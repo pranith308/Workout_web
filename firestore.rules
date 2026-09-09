@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+      match /plans/{planId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+      match /logs/{logId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+    match /userSecrets/{uid} {
+      allow read, write: if false;
+    }
+    // Username lookup - server (Admin SDK) only
+    match /usernames/{username} {
+      allow read, write: if false;
+    }
+    // Login rate limiting - server only
+    match /loginAttempts/{doc} {
+      allow read, write: if false;
+    }
+  }
+}
