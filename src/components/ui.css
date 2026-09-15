@@ -158,14 +158,43 @@
   font-size: 0.9rem;
 }
 
-.catalog-banner {
+.sync-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(88px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  max-width: calc(100% - 40px);
   background: #242424;
-  border: 1px solid rgba(224, 224, 224, 0.35);
-  border-radius: 12px;
-  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(184, 165, 147, 0.6);
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  color: #fff;
   font-size: 0.9rem;
-  margin-bottom: 16px;
-  padding: 12px 14px;
+  overflow: hidden;
+  padding: 12px 18px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  z-index: 60;
+  animation: sync-toast-in 0.25s ease-out, sync-toast-out 0.4s ease-in 3.6s forwards;
+}
+
+@keyframes sync-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes sync-toast-out {
+  to {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
 }
 
 .plan-list {

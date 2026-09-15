@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import type { CatalogCache } from '../models/admin';
@@ -149,6 +149,14 @@ export function PlanListScreen() {
   const [addError, setAddError] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [planError, setPlanError] = useState<string | null>(null);
+  const [syncToast, setSyncToast] = useState<string | null>(null);
+  const syncToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (syncToastTimer.current) clearTimeout(syncToastTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -167,12 +175,21 @@ export function PlanListScreen() {
     return unsub;
   }, [user]);
 
+  function showSyncToast(message: string) {
+    setSyncToast(message);
+    if (syncToastTimer.current) clearTimeout(syncToastTimer.current);
+    syncToastTimer.current = setTimeout(() => setSyncToast(null), 4000);
+  }
+
   async function handleSyncCatalog() {
     setSyncError(null);
     setSyncing(true);
     try {
       const next = await syncCatalogFromGit();
       setCatalog(next);
+      showSyncToast(
+        `Catalog synced · ${next.templates.length} templates, ${next.exerciseCount} exercises`,
+      );
     } catch (err) {
       setSyncError(err instanceof Error ? err.message : 'Catalog sync failed');
     } finally {
@@ -249,20 +266,6 @@ export function PlanListScreen() {
         <p style={{ color: 'rgba(255,255,255,0.7)', margin: '0 0 12px' }}>Signed in as {username}</p>
       )}
 
-      <div className="catalog-banner">
-        {catalog ? (
-          <>
-            Catalog: {catalog.templates.length} templates, {catalog.exerciseCount} exercises
-            <br />
-            <span style={{ opacity: 0.75 }}>
-              Updated {new Date(catalog.syncedAt).toLocaleString()}
-            </span>
-          </>
-        ) : (
-          <>No catalog cached yet. Tap &quot;Sync catalog&quot; to load exercises and templates from Git.</>
-        )}
-      </div>
-
       {syncError && <ErrorText>{syncError}</ErrorText>}
       {planError && <ErrorText>{planError}</ErrorText>}
 
@@ -310,6 +313,12 @@ export function PlanListScreen() {
             </li>
           ))}
         </ul>
+      )}
+
+      {syncToast && (
+        <div className="sync-toast" role="status" aria-live="polite">
+          {syncToast}
+        </div>
       )}
 
       <button
