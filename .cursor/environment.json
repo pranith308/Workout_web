@@ -1,0 +1,17 @@
+{
+  "name": "Workout Web",
+  "install": "npm ci",
+  "terminals": [
+    {
+      "name": "vite",
+      "command": "npm run dev -- --host",
+      "description": "Vite dev server for the Workout Planner PWA. Serves the frontend on http://localhost:5173. Auth API routes (/api/*) require Firebase credentials and `vercel dev`; run `npm run dev:full` after providing them."
+    }
+  ],
+  "ports": [
+    {
+      "name": "vite",
+      "port": 5173
+    }
+  ]
+}
