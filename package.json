@@ -9,6 +9,7 @@
     "emulators": "firebase emulators:start --project demo-workout-web --only auth,firestore",
     "emulators:setup": "firebase setup:emulators:firestore && firebase setup:emulators:ui",
     "dev:api": "tsx scripts/dev-api-server.ts",
+    "dev:start": "bash scripts/dev-start.sh",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit"
