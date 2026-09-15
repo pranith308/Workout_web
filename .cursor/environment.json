@@ -1,17 +1,31 @@
 {
   "name": "Workout Web",
-  "install": "npm ci",
+  "install": "npm ci && npm run emulators:setup",
   "terminals": [
+    {
+      "name": "emulators",
+      "command": "npm run emulators",
+      "description": "Firebase Auth + Firestore emulators (demo project, no real credentials). Firestore rules from firestore.rules. Emulator UI on http://localhost:4000."
+    },
+    {
+      "name": "api",
+      "command": "npm run dev:api",
+      "description": "Local auth API (/api/signup, /api/login, /api/reset-pin) on http://localhost:3000, backed by the emulators. Replaces `vercel dev` for local dev; waits for the emulators before serving. Invite code: demo-invite."
+    },
     {
       "name": "vite",
       "command": "npm run dev -- --host",
-      "description": "Vite dev server for the Workout Planner PWA. Serves the frontend on http://localhost:5173. Auth API routes (/api/*) require Firebase credentials and `vercel dev`; run `npm run dev:full` after providing them."
+      "description": "Vite dev server for the Workout Planner PWA on http://localhost:5173. Proxies /api to the local auth API and uses the Firebase emulators (VITE_FIREBASE_EMULATOR from .env.development)."
     }
   ],
   "ports": [
     {
       "name": "vite",
       "port": 5173
+    },
+    {
+      "name": "emulator-ui",
+      "port": 4000
     }
   ]
 }
