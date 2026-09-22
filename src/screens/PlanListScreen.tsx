@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import type { CatalogCache } from '../models/admin';
+import type { AdminWorkoutPlanTemplate, CatalogCache } from '../models/admin';
+import { getCachedExercise } from '../services/exerciseCache';
 import type { UserWorkoutPlan } from '../models/user';
 import {
   createCustomPlan,
@@ -27,6 +28,14 @@ import {
 } from '../components/ui';
 
 const LONG_PRESS_MS = 500;
+
+function templateExerciseCount(template: AdminWorkoutPlanTemplate): number {
+  return template.workoutDays.reduce((n, day) => n + day.exercises.length, 0);
+}
+
+function sortedWorkoutDays(template: AdminWorkoutPlanTemplate) {
+  return [...template.workoutDays].sort((a, b) => a.orderIndex - b.orderIndex);
+}
 
 function useLongPress(onLongPress: () => void) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -118,7 +127,7 @@ function AddPlanModal({
   catalog,
   onClose,
   onAddByCode,
-  onBrowseSelect,
+  onAddTemplate,
   onCreateCustom,
   adding,
   error,
@@ -126,16 +135,29 @@ function AddPlanModal({
   catalog: CatalogCache | null;
   onClose: () => void;
   onAddByCode: (code: string) => void;
-  onBrowseSelect: (code: string) => void;
+  onAddTemplate: (template: AdminWorkoutPlanTemplate) => void;
   onCreateCustom: (name: string, days: number) => void;
   adding: boolean;
   error: string | null;
 }) {
   const [code, setCode] = useState('');
-  const [mode, setMode] = useState<'menu' | 'custom' | 'browse'>('menu');
+  const [mode, setMode] = useState<'menu' | 'custom' | 'browse' | 'browse-preview'>('menu');
   const [customName, setCustomName] = useState('');
   const [customDays, setCustomDays] = useState('3');
-  const publicTemplates = catalog?.templates.filter((t) => t.isPublic) ?? [];
+  const [previewTemplate, setPreviewTemplate] = useState<AdminWorkoutPlanTemplate | null>(null);
+  const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
+  const publicTemplates =
+    catalog?.templates.filter((t) => t.isPublic).sort((a, b) => a.name.localeCompare(b.name)) ?? [];
+
+  function openTemplatePreview(template: AdminWorkoutPlanTemplate) {
+    setPreviewTemplate(template);
+    setExpandedDays({});
+    setMode('browse-preview');
+  }
+
+  function toggleDay(dayId: string) {
+    setExpandedDays((prev) => ({ ...prev, [dayId]: !prev[dayId] }));
+  }
 
   if (mode === 'custom') {
     return (
@@ -176,33 +198,144 @@ function AddPlanModal({
     );
   }
 
+  if (mode === 'browse-preview' && previewTemplate) {
+    const days = sortedWorkoutDays(previewTemplate);
+    const totalExercises = templateExerciseCount(previewTemplate);
+
+    return (
+      <div className="modal-backdrop template-browse-backdrop" onClick={onClose} role="presentation">
+        <div
+          className="modal modal-template-browse"
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="template-browse-toolbar">
+            <Button variant="ghost" disabled={adding} onClick={() => setMode('browse')}>
+              ‹ Templates
+            </Button>
+            <span className="template-browse-toolbar-title">Preview</span>
+            <Button variant="ghost" onClick={onClose} disabled={adding}>
+              Close
+            </Button>
+          </div>
+
+          <div className="template-browse-scroll">
+            <h2 className="template-preview-name">{previewTemplate.name}</h2>
+            {previewTemplate.description?.trim() && (
+              <p className="template-preview-desc">{previewTemplate.description}</p>
+            )}
+            <p className="template-preview-stats muted">
+              {days.length} day{days.length === 1 ? '' : 's'} · {totalExercises} exercise
+              {totalExercises === 1 ? '' : 's'}
+            </p>
+
+            <div className="template-day-list">
+              {days.map((day, index) => {
+                const open = !!expandedDays[day.dayId];
+                const count = day.exercises.length;
+                return (
+                  <div
+                    key={day.dayId}
+                    className={`template-day-item${open ? ' template-day-item--open' : ''}`}
+                  >
+                    <button
+                      type="button"
+                      className="template-day-header"
+                      onClick={() => toggleDay(day.dayId)}
+                      aria-expanded={open}
+                    >
+                      <span>
+                        Day {index + 1} — {day.name}
+                      </span>
+                      <span className="template-day-chevron" aria-hidden>
+                        {open ? '▾' : '▸'}
+                      </span>
+                    </button>
+                    {open ? (
+                      <ul className="template-day-exercises">
+                        {day.exercises.map((ref) => {
+                          const entry = getCachedExercise(ref.exerciseId);
+                          const label = entry?.name ?? ref.exerciseId;
+                          return <li key={`${day.dayId}-${ref.exerciseId}-${ref.orderIndex}`}>{label}</li>;
+                        })}
+                      </ul>
+                    ) : (
+                      <p className="template-day-collapsed muted">
+                        {count} exercise{count === 1 ? '' : 's'} — tap to expand
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {error && <ErrorText>{error}</ErrorText>}
+          </div>
+
+          <div className="template-browse-footer">
+            <Button
+              variant="primary"
+              disabled={adding}
+              onClick={() => onAddTemplate(previewTemplate)}
+            >
+              {adding ? 'Adding…' : `Add ${previewTemplate.name}`}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (mode === 'browse') {
     return (
-      <div className="modal-backdrop" onClick={onClose} role="presentation">
-        <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-          <h2>Browse templates</h2>
-          {publicTemplates.length === 0 ? (
-            <p className="muted">No public templates in catalog. Sync catalog first.</p>
-          ) : (
-            <div className="template-browse-list">
-              {publicTemplates.map((t) => (
-                <button
-                  key={t.templateId}
-                  type="button"
-                  className="modal-option"
-                  disabled={adding}
-                  onClick={() => onBrowseSelect(t.templateCode)}
-                >
-                  {t.templateCode} — {t.name}
-                </button>
-              ))}
-            </div>
-          )}
-          {error && <ErrorText>{error}</ErrorText>}
-          <div className="modal-actions" style={{ marginTop: 16 }}>
+      <div className="modal-backdrop template-browse-backdrop" onClick={onClose} role="presentation">
+        <div
+          className="modal modal-template-browse"
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="template-browse-toolbar">
             <Button variant="ghost" disabled={adding} onClick={() => setMode('menu')}>
-              Back
+              ‹ Back
             </Button>
+            <span className="template-browse-toolbar-title">Templates</span>
+            <Button variant="ghost" onClick={onClose} disabled={adding}>
+              Close
+            </Button>
+          </div>
+
+          <div className="template-browse-scroll">
+            {publicTemplates.length === 0 ? (
+              <p className="muted">No public templates in catalog. Sync catalog first.</p>
+            ) : (
+              <div className="template-pick-list">
+                {publicTemplates.map((t) => {
+                  const dayCount = t.workoutDays.length;
+                  return (
+                    <button
+                      key={t.templateId}
+                      type="button"
+                      className="template-pick-row"
+                      disabled={adding}
+                      onClick={() => openTemplatePreview(t)}
+                    >
+                      <span className="template-pick-text">
+                        <span className="template-pick-name">{t.name}</span>
+                        <span className="template-pick-meta muted">
+                          {dayCount} day{dayCount === 1 ? '' : 's'} · tap to preview
+                        </span>
+                      </span>
+                      <span className="template-pick-chevron" aria-hidden>
+                        ›
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {error && <ErrorText>{error}</ErrorText>}
           </div>
         </div>
       </div>
@@ -387,10 +520,8 @@ export function PlanListScreen() {
     }
   }
 
-  async function handleBrowseSelect(code: string) {
-    if (!user || !catalog) return;
-    const template = catalog.templates.find((t) => t.templateCode === code);
-    if (!template) return;
+  async function handleAddTemplate(template: AdminWorkoutPlanTemplate) {
+    if (!user) return;
     setAddError(null);
     setAdding(true);
     try {
@@ -488,7 +619,7 @@ export function PlanListScreen() {
           catalog={catalog}
           onClose={() => setShowAdd(false)}
           onAddByCode={handleAddByCode}
-          onBrowseSelect={handleBrowseSelect}
+          onAddTemplate={handleAddTemplate}
           onCreateCustom={handleCreateCustom}
           adding={adding}
           error={addError}
