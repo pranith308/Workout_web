@@ -181,7 +181,7 @@ function MediaAccordionSection({
   rawBase: string;
 }) {
   return (
-    <div className="media-accordion-item">
+    <div className={`media-accordion-item${open ? ' media-accordion-item--open' : ''}`}>
       <button type="button" className="media-accordion-header" onClick={onToggle} aria-expanded={open}>
         <span>{section.title}</span>
         <span className="media-accordion-chevron" aria-hidden>
@@ -418,6 +418,9 @@ export function ExerciseDetailModal({
                         <span className="muted">{timed ? 'sec' : 'reps'}</span>
                         {!timed && (
                           <>
+                            <span className="set-multiply" aria-hidden>
+                              ×
+                            </span>
                             <input
                               className="field-input set-input"
                               type="number"
