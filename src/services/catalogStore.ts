@@ -3,6 +3,9 @@ import type { AdminWorkoutPlanTemplate, CatalogCache } from '../models/admin';
 import { fetchAllPublicTemplates, fetchMetadata, getRawBaseUrl } from './adminFetcher';
 import { ensureExercises } from './exerciseCache';
 
+/** Minimum time between automatic catalog syncs when the home screen is opened. */
+export const CATALOG_AUTO_SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000;
+
 export function loadCatalogCache(): CatalogCache | null {
   try {
     const raw = localStorage.getItem(CATALOG_CACHE_KEY);
@@ -19,6 +22,14 @@ export function loadCatalogCache(): CatalogCache | null {
 
 export function saveCatalogCache(cache: CatalogCache): void {
   localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify(cache));
+}
+
+export function isCatalogSyncDue(): boolean {
+  const cache = loadCatalogCache();
+  if (!cache?.syncedAt) return true;
+  const syncedAt = Date.parse(cache.syncedAt);
+  if (Number.isNaN(syncedAt)) return true;
+  return Date.now() - syncedAt >= CATALOG_AUTO_SYNC_INTERVAL_MS;
 }
 
 export function getTemplateByCode(

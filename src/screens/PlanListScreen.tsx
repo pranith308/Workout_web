@@ -12,7 +12,7 @@ import {
   isCustomPlan,
   subscribePlans,
 } from '../services/planService';
-import { loadCatalogCache, syncCatalogFromGit } from '../services/catalogStore';
+import { isCatalogSyncDue, loadCatalogCache, syncCatalogFromGit } from '../services/catalogStore';
 import {
   Button,
   Card,
@@ -348,7 +348,7 @@ export function PlanListScreen() {
     syncToastTimer.current = setTimeout(() => setSyncToast(null), 4000);
   }
 
-  async function handleSyncCatalog() {
+  async function runCatalogSync() {
     setSyncError(null);
     setSyncing(true);
     try {
@@ -362,6 +362,15 @@ export function PlanListScreen() {
     } finally {
       setSyncing(false);
     }
+  }
+
+  useEffect(() => {
+    if (!user || !isCatalogSyncDue()) return;
+    void runCatalogSync();
+  }, [user]);
+
+  async function handleSyncCatalog() {
+    await runCatalogSync();
   }
 
   async function handleAddByCode(code: string) {
