@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import type { CatalogCache } from '../models/admin';
@@ -12,7 +13,106 @@ import {
   subscribePlans,
 } from '../services/planService';
 import { loadCatalogCache, syncCatalogFromGit } from '../services/catalogStore';
-import { Button, Card, ErrorText, Field, LoadingSpinner, Screen } from '../components/ui';
+import {
+  Button,
+  Card,
+  ErrorText,
+  Field,
+  IconArrowRight,
+  IconButton,
+  IconLogout,
+  IconSync,
+  LoadingSpinner,
+  Screen,
+} from '../components/ui';
+
+const LONG_PRESS_MS = 500;
+
+function useLongPress(onLongPress: () => void) {
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const firedRef = useRef(false);
+
+  const clear = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const start = useCallback(() => {
+    firedRef.current = false;
+    clear();
+    timerRef.current = setTimeout(() => {
+      firedRef.current = true;
+      onLongPress();
+    }, LONG_PRESS_MS);
+  }, [clear, onLongPress]);
+
+  const end = useCallback(() => {
+    clear();
+  }, [clear]);
+
+  const consumeIfLongPress = useCallback(() => {
+    if (firedRef.current) {
+      firedRef.current = false;
+      return true;
+    }
+    return false;
+  }, []);
+
+  const pointerHandlers = {
+    onPointerDown: (e: ReactPointerEvent) => {
+      if (e.button !== 0) return;
+      start();
+    },
+    onPointerUp: end,
+    onPointerLeave: end,
+    onPointerCancel: end,
+  };
+
+  return { pointerHandlers, consumeIfLongPress };
+}
+
+function PlanActionSheet({
+  plan,
+  onClose,
+  onEdit,
+  onDelete,
+}: {
+  plan: UserWorkoutPlan;
+  onClose: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const custom = isCustomPlan(plan);
+
+  return (
+    <div className="modal-backdrop" onClick={onClose} role="presentation">
+      <div
+        className="modal plan-action-sheet"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="plan-action-title"
+      >
+        <h2 id="plan-action-title">{plan.name}</h2>
+        <div className="modal-actions">
+          {custom && (
+            <Button variant="ghost" onClick={onEdit}>
+              Edit plan
+            </Button>
+          )}
+          <Button variant="danger" onClick={onDelete}>
+            Delete plan
+          </Button>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function AddPlanModal({
   catalog,
@@ -32,7 +132,7 @@ function AddPlanModal({
   error: string | null;
 }) {
   const [code, setCode] = useState('');
-  const [mode, setMode] = useState<'menu' | 'custom'>('menu');
+  const [mode, setMode] = useState<'menu' | 'custom' | 'browse'>('menu');
   const [customName, setCustomName] = useState('');
   const [customDays, setCustomDays] = useState('3');
   const publicTemplates = catalog?.templates.filter((t) => t.isPublic) ?? [];
@@ -76,6 +176,39 @@ function AddPlanModal({
     );
   }
 
+  if (mode === 'browse') {
+    return (
+      <div className="modal-backdrop" onClick={onClose} role="presentation">
+        <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+          <h2>Browse templates</h2>
+          {publicTemplates.length === 0 ? (
+            <p className="muted">No public templates in catalog. Sync catalog first.</p>
+          ) : (
+            <div className="template-browse-list">
+              {publicTemplates.map((t) => (
+                <button
+                  key={t.templateId}
+                  type="button"
+                  className="modal-option"
+                  disabled={adding}
+                  onClick={() => onBrowseSelect(t.templateCode)}
+                >
+                  {t.templateCode} — {t.name}
+                </button>
+              ))}
+            </div>
+          )}
+          {error && <ErrorText>{error}</ErrorText>}
+          <div className="modal-actions" style={{ marginTop: 16 }}>
+            <Button variant="ghost" disabled={adding} onClick={() => setMode('menu')}>
+              Back
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="modal-backdrop" onClick={onClose} role="presentation">
       <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
@@ -88,52 +221,85 @@ function AddPlanModal({
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             placeholder="e.g., PPL"
             disabled={adding}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && code.trim() && !adding) onAddByCode(code.trim());
+            }}
           />
           <Button
             variant="primary"
+            className="btn-circle-submit"
             disabled={adding || !code.trim()}
             onClick={() => onAddByCode(code.trim())}
-            aria-label="Add plan by code"
+            aria-label="Add plan by template code"
           >
-            →
+            <IconArrowRight />
           </Button>
         </div>
 
         {error && <ErrorText>{error}</ErrorText>}
 
-        <div className="modal-actions" style={{ marginTop: 12 }}>
-          <Button variant="ghost" disabled={adding} onClick={() => setMode('custom')}>
-            Custom plan
-          </Button>
-        </div>
-
-        {publicTemplates.length > 0 && (
-          <>
-            <p style={{ color: 'rgba(255,255,255,0.85)', margin: '16px 0 8px' }}>
-              Or choose a template:
-            </p>
-            <div className="modal-actions">
-              {publicTemplates.slice(0, 12).map((t) => (
-                <Button
-                  key={t.templateId}
-                  variant="ghost"
-                  disabled={adding}
-                  onClick={() => onBrowseSelect(t.templateCode)}
-                >
-                  {t.templateCode} — {t.name}
-                </Button>
-              ))}
-            </div>
-          </>
-        )}
-
         <div className="modal-actions" style={{ marginTop: 16 }}>
+          <button
+            type="button"
+            className="modal-option"
+            disabled={adding}
+            onClick={() => setMode('custom')}
+          >
+            Custom plan
+          </button>
+          <button
+            type="button"
+            className="modal-option"
+            disabled={adding}
+            onClick={() => setMode('browse')}
+          >
+            Browse templates
+          </button>
           <Button variant="ghost" onClick={onClose} disabled={adding}>
             Cancel
           </Button>
         </div>
       </div>
     </div>
+  );
+}
+
+function PlanListItem({
+  plan,
+  onOpen,
+  onShowActions,
+}: {
+  plan: UserWorkoutPlan;
+  onOpen: () => void;
+  onShowActions: () => void;
+}) {
+  const { pointerHandlers, consumeIfLongPress } = useLongPress(onShowActions);
+
+  return (
+    <li
+      className="plan-list-item"
+      onContextMenu={(e) => {
+        e.preventDefault();
+        onShowActions();
+      }}
+    >
+      <div {...pointerHandlers}>
+        <Card
+          variant="plan"
+          onClick={() => {
+            if (consumeIfLongPress()) return;
+            onOpen();
+          }}
+        >
+          <p className="plan-card-title">{plan.name}</p>
+          {plan.description && <p className="plan-card-desc">{plan.description}</p>}
+          <p className="plan-card-meta">
+            {plan.workoutDays.length} day{plan.workoutDays.length === 1 ? '' : 's'}
+            {isCustomPlan(plan) ? ' · custom' : ' · from template'}
+          </p>
+        </Card>
+      </div>
+    </li>
   );
 }
 
@@ -150,6 +316,7 @@ export function PlanListScreen() {
   const [syncError, setSyncError] = useState<string | null>(null);
   const [planError, setPlanError] = useState<string | null>(null);
   const [syncToast, setSyncToast] = useState<string | null>(null);
+  const [actionPlan, setActionPlan] = useState<UserWorkoutPlan | null>(null);
   const syncToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -246,6 +413,7 @@ export function PlanListScreen() {
     if (!user) return;
     if (!window.confirm('Delete this plan and its logs?')) return;
     await deletePlan(user.uid, planId);
+    setActionPlan(null);
   }
 
   return (
@@ -253,12 +421,12 @@ export function PlanListScreen() {
       <div className="top-bar">
         <h1>Workout Plans</h1>
         <div className="top-bar-actions">
-          <Button variant="ghost" onClick={handleSyncCatalog} disabled={syncing}>
-            {syncing ? 'Syncing…' : 'Sync catalog'}
-          </Button>
-          <Button variant="ghost" onClick={() => logout()}>
-            Out
-          </Button>
+          <IconButton label="Sync catalog" onClick={() => void handleSyncCatalog()} disabled={syncing}>
+            <IconSync spinning={syncing} />
+          </IconButton>
+          <IconButton label="Log out" onClick={() => void logout()}>
+            <IconLogout />
+          </IconButton>
         </div>
       </div>
 
@@ -279,38 +447,12 @@ export function PlanListScreen() {
       ) : (
         <ul className="plan-list">
           {plans.map((plan) => (
-            <li key={plan.userPlanId}>
-              <Card variant="plan" onClick={() => navigate(`/plans/${plan.userPlanId}`)}>
-                <p className="plan-card-title">{plan.name}</p>
-                {plan.description && <p className="plan-card-desc">{plan.description}</p>}
-                <p className="plan-card-meta">
-                  {plan.workoutDays.length} day{plan.workoutDays.length === 1 ? '' : 's'}
-                  {isCustomPlan(plan) ? ' · custom' : ' · from template'}
-                </p>
-                <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-                  {isCustomPlan(plan) && (
-                    <Button
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/plans/${plan.userPlanId}/edit`);
-                      }}
-                    >
-                      Edit
-                    </Button>
-                  )}
-                  <Button
-                    variant="danger"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      void handleDelete(plan.userPlanId);
-                    }}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </Card>
-            </li>
+            <PlanListItem
+              key={plan.userPlanId}
+              plan={plan}
+              onOpen={() => navigate(`/plans/${plan.userPlanId}`)}
+              onShowActions={() => setActionPlan(plan)}
+            />
           ))}
         </ul>
       )}
@@ -341,6 +483,19 @@ export function PlanListScreen() {
           onCreateCustom={handleCreateCustom}
           adding={adding}
           error={addError}
+        />
+      )}
+
+      {actionPlan && (
+        <PlanActionSheet
+          plan={actionPlan}
+          onClose={() => setActionPlan(null)}
+          onEdit={() => {
+            const id = actionPlan.userPlanId;
+            setActionPlan(null);
+            navigate(`/plans/${id}/edit`);
+          }}
+          onDelete={() => void handleDelete(actionPlan.userPlanId)}
         />
       )}
     </Screen>
