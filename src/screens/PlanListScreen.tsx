@@ -237,33 +237,40 @@ function AddPlanModal({
                 return (
                   <div
                     key={day.dayId}
-                    className={`template-day-item${open ? ' template-day-item--open' : ''}`}
+                    className={`media-accordion-item${open ? ' media-accordion-item--open' : ''}`}
                   >
                     <button
                       type="button"
-                      className="template-day-header"
+                      className="media-accordion-header"
                       onClick={() => toggleDay(day.dayId)}
                       aria-expanded={open}
                     >
-                      <span>
-                        Day {index + 1} — {day.name}
+                      <span className="media-accordion-title-block">
+                        <span>
+                          Day {index + 1} — {day.name}
+                        </span>
+                        {!open && (
+                          <span className="media-accordion-sub muted">
+                            {count} exercise{count === 1 ? '' : 's'} — tap to expand
+                          </span>
+                        )}
                       </span>
-                      <span className="template-day-chevron" aria-hidden>
+                      <span className="media-accordion-chevron" aria-hidden>
                         {open ? '▾' : '▸'}
                       </span>
                     </button>
-                    {open ? (
-                      <ul className="template-day-exercises">
-                        {day.exercises.map((ref) => {
-                          const entry = getCachedExercise(ref.exerciseId);
-                          const label = entry?.name ?? ref.exerciseId;
-                          return <li key={`${day.dayId}-${ref.exerciseId}-${ref.orderIndex}`}>{label}</li>;
-                        })}
-                      </ul>
-                    ) : (
-                      <p className="template-day-collapsed muted">
-                        {count} exercise{count === 1 ? '' : 's'} — tap to expand
-                      </p>
+                    {open && (
+                      <div className="media-accordion-body">
+                        <ul className="template-day-exercises">
+                          {day.exercises.map((ref) => {
+                            const entry = getCachedExercise(ref.exerciseId);
+                            const label = entry?.name ?? ref.exerciseId;
+                            return (
+                              <li key={`${day.dayId}-${ref.exerciseId}-${ref.orderIndex}`}>{label}</li>
+                            );
+                          })}
+                        </ul>
+                      </div>
                     )}
                   </div>
                 );

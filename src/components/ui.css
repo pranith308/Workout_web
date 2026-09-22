@@ -491,62 +491,37 @@
 .template-day-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
 }
 
-.template-day-item {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.template-day-item--open {
-  border-color: rgba(69, 199, 184, 0.45);
-}
-
-.template-day-header {
-  align-items: center;
-  background: var(--surface-2);
-  border: none;
-  color: #fff;
-  cursor: pointer;
+.media-accordion-title-block {
+  align-items: flex-start;
   display: flex;
-  font: inherit;
-  font-size: 1rem;
-  font-weight: 600;
-  justify-content: space-between;
-  padding: 14px 16px;
+  flex-direction: column;
+  gap: 4px;
   text-align: left;
+}
+
+.media-accordion-sub {
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.media-accordion-body .template-day-exercises {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   width: 100%;
 }
 
-.template-day-chevron {
-  color: var(--accent);
-  flex-shrink: 0;
-  margin-left: 8px;
-}
-
-.template-day-collapsed {
-  font-size: 0.85rem;
-  margin: 0;
-  padding: 0 16px 14px;
-}
-
-.template-day-exercises {
-  list-style: none;
-  margin: 0;
-  padding: 4px 16px 14px;
-}
-
-.template-day-exercises li {
+.media-accordion-body .template-day-exercises li {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.88);
   font-size: 0.92rem;
-  padding: 10px 0;
+  padding: 10px 2px;
 }
 
-.template-day-exercises li:last-child {
+.media-accordion-body .template-day-exercises li:last-child {
   border-bottom: none;
 }
 
