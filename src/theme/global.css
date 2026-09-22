@@ -1,14 +1,21 @@
 :root {
-  color: #fff;
-  background: #1a1a1a;
-  font-family:
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    Roboto,
-    Helvetica,
-    Arial,
-    sans-serif;
+  --page: #0c0f14;
+  --bg: #12161d;
+  --surface: #1a2029;
+  --surface-2: #1c2530;
+  --text: #e8edf2;
+  --muted: #8b97a6;
+  --border: #232b36;
+  --accent: #45c7b8;
+  --accent-ink: #5fd6c8;
+  --accent-soft: rgba(69, 199, 184, 0.16);
+  --accent-contrast: #0c0f14;
+  --head-font: 'Quicksand', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --body-font: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+  color: var(--text);
+  background: var(--bg);
+  font-family: var(--body-font);
   line-height: 1.5;
   font-weight: 400;
   font-synthesis: none;
@@ -27,9 +34,26 @@ body,
   min-height: 100%;
 }
 
+html {
+  background-color: var(--bg);
+}
+
 body {
   margin: 0;
-  background: #1a1a1a;
+  background: transparent;
+  position: relative;
+}
+
+/* Subtle weightlifting line-art woven across the whole app. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url('./gym-bg.svg');
+  background-repeat: repeat;
+  background-size: 520px auto;
 }
 
 .screen {
@@ -46,4 +70,17 @@ a {
 button,
 input {
   font: inherit;
+}
+
+h1,
+h2,
+h3,
+.title,
+.top-bar h1,
+.plan-card-title,
+.modal h2,
+.detail-header h2,
+.history-section h3,
+.picker-name {
+  font-family: var(--head-font);
 }

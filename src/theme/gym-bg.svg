@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="520" viewBox="0 0 520 520" fill="none">
+  <g stroke="#45c7b8" stroke-opacity="0.05" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <!-- barbell (top-left) -->
+    <g transform="translate(20 62) rotate(-12) scale(0.9)">
+      <line x1="55" y1="30" x2="175" y2="30"/>
+      <line x1="18" y1="30" x2="30" y2="30"/>
+      <line x1="200" y1="30" x2="212" y2="30"/>
+      <ellipse cx="46" cy="30" rx="7" ry="23"/>
+      <ellipse cx="34" cy="30" rx="6" ry="16"/>
+      <ellipse cx="184" cy="30" rx="7" ry="23"/>
+      <ellipse cx="196" cy="30" rx="6" ry="16"/>
+    </g>
+    <!-- dumbbell (top-right) -->
+    <g transform="translate(368 58) rotate(14) scale(0.95)">
+      <line x1="46" y1="30" x2="94" y2="30"/>
+      <ellipse cx="38" cy="30" rx="8" ry="21"/>
+      <ellipse cx="25" cy="30" rx="7" ry="14"/>
+      <ellipse cx="102" cy="30" rx="8" ry="21"/>
+      <ellipse cx="115" cy="30" rx="7" ry="14"/>
+    </g>
+    <!-- weight plate (mid-left) -->
+    <g transform="translate(40 300) scale(1.3)">
+      <circle cx="42" cy="42" r="34"/>
+      <circle cx="42" cy="42" r="11"/>
+      <line x1="42" y1="8" x2="42" y2="18"/>
+      <line x1="42" y1="66" x2="42" y2="76"/>
+      <line x1="8" y1="42" x2="18" y2="42"/>
+      <line x1="66" y1="42" x2="76" y2="42"/>
+    </g>
+    <!-- squat with barbell (center-right) -->
+    <g transform="translate(300 286) scale(1.05)">
+      <line x1="14" y1="30" x2="126" y2="30"/>
+      <ellipse cx="14" cy="30" rx="6" ry="18"/>
+      <ellipse cx="126" cy="30" rx="6" ry="18"/>
+      <circle cx="70" cy="34" r="11"/>
+      <path d="M70 45 L48 30 M70 45 L92 30"/>
+      <path d="M70 45 L70 80"/>
+      <path d="M70 80 L46 98 L52 130 M70 80 L94 98 L88 130"/>
+    </g>
+    <!-- small dumbbell (bottom-center) -->
+    <g transform="translate(168 452) rotate(-6) scale(0.62)">
+      <line x1="46" y1="30" x2="94" y2="30"/>
+      <ellipse cx="38" cy="30" rx="8" ry="21"/>
+      <ellipse cx="25" cy="30" rx="7" ry="14"/>
+      <ellipse cx="102" cy="30" rx="8" ry="21"/>
+      <ellipse cx="115" cy="30" rx="7" ry="14"/>
+    </g>
+  </g>
+</svg>
