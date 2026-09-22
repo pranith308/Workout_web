@@ -172,10 +172,6 @@ export function ExerciseListScreen() {
                     )}
                     <div className="exercise-meta">
                       <p className="plan-card-title">{name}</p>
-                      <p className="plan-card-meta">
-                        Target {config.targetSets}×{config.targetReps}
-                        {timed ? 's' : ''}
-                      </p>
                       <p className={today ? 'logged-line' : 'muted'}>{summaryLine(today, timed)}</p>
                       {custom && (
                         <Button
